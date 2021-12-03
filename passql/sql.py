@@ -1,14 +1,12 @@
-from .exceptions import SqlException
+from passql.exceptions import SqlException
 from typing_extensions import TypeAlias
 from typing import Dict, Type, Any, Callable, Optional
-import datetime
 import re
 
 __all__ = (
     'Sql',
     'SqlMaker',
     'SqlConverter',
-    'SqlDefaultConverters',
 )
 
 ValueToSqlConverter: TypeAlias = Callable[[Any, 'SqlConverter'], str]
@@ -100,19 +98,10 @@ class SqlMaker:
 class SqlConverter:
     __slots__ = ('_type_to_converter', )
 
-    __DEFAULT_MAP = {
-        Sql: lambda val, _: str(val),
-        int: lambda val, _: str(val),
-        float: lambda val, _: str(val),
-        bool: lambda val, _: "TRUE" if val else "FALSE",
-        type(None): lambda val, _: "NULL",
-    }
-
     def __init__(self, type_to_converter_map: Dict[Type, ValueToSqlConverter]):
-        self._type_to_converter = {}
-
-        for t in self.__DEFAULT_MAP:
-            self._type_to_converter[t] = self.__DEFAULT_MAP[t]
+        self._type_to_converter = {
+            Sql: lambda val, _: str(val),
+        }
 
         for t in type_to_converter_map:
             self._type_to_converter[t] = type_to_converter_map[t]
@@ -133,15 +122,3 @@ class SqlConverter:
             type_to_converters[t] = converter
 
         return SqlConverter(type_to_converters)
-
-
-class SqlDefaultConverters:
-    POSTGRES = SqlConverter({
-        str: lambda val, _: "'" + val.replace("'", "") + "'",
-        tuple: lambda val, converter: ','.join(converter(v) for v in val),
-        range: lambda val, converter: ','.join(converter(v) for v in val),
-        list: lambda val, converter: "'{" + ','.join(converter(v) for v in val) + "}'",
-        set: lambda val, converter: "'{" + ','.join(converter(v) for v in val) + "}'",
-        datetime.datetime: lambda val, _: f"'{val}'::timestamp",
-        datetime.date: lambda val, _: f"'{val}'::date",
-    })
