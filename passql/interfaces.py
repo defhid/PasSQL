@@ -1,4 +1,4 @@
-from typing import Protocol, Any, List
+from typing import Protocol, Any, List, Iterator
 
 __all__ = (
     'IDbRecord',
@@ -12,6 +12,15 @@ class IDbRecord(Protocol):
         ...
 
     def __getitem__(self, field_name) -> Any:
+        ...
+
+    def __len__(self) -> int:
+        ...
+
+    def keys(self) -> Iterator[str]:
+        ...
+
+    def values(self) -> Iterator[Any]:
         ...
 
 

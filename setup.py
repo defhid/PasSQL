@@ -5,7 +5,7 @@ def setup():
         long_description = fh.read()
 
     setup(name='passql',
-          version='0.1',
+          version='0.2',
           description='Super light ORM',
           long_description=long_description,
           packages=['passql'],
@@ -26,7 +26,7 @@ def publish():
     upload.main(['dist\*'])
 
 
-if __name__ != '__main__':
+if __name__ == '__main__':
     # python setup.py sdist
     publish()
 else:

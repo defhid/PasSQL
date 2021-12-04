@@ -9,6 +9,7 @@ __all__ = (
 )
 
 TEntity = TypeVar('TEntity', bound=DbEntity)
+T = TypeVar('T')
 
 
 class DbConnection:
@@ -49,11 +50,13 @@ class DbConnection:
             raise QueryException(sql, str(e))
 
     async def query_scalar(self,
+                           t: Type[T],
                            sql: Union[Sql, str],
                            params: Any = None,
-                           timeout: int = None) -> Coroutine[Any, Any, Optional[Any]]:
+                           timeout: int = None) -> Optional[T]:
         """ Query single value.
 
+        :param t: Return scalar type, only for generic.
         :param sql: Query string or prepared Sql object.
         :param params: Parameters to parse to sql.
         :param timeout: Time limit for the operation.
@@ -98,6 +101,42 @@ class DbConnection:
             result[i] = t.from_record(result[i])
 
         # noinspection PyTypeChecker
+        return result
+
+    async def query_values_list(self,
+                                t: Type[T],
+                                sql: Union[Sql, str],
+                                params: Any = None,
+                                timeout: int = None) -> List[T]:
+        """ Query list of entities.
+
+        :param t: Return record/scalar type, only for generic.
+        :param sql: Query string or prepared Sql object.
+        :param params: Parameters to parse to sql.
+        :param timeout: Time limit for the operation.
+        :return: List of objects.
+        """
+
+        if type(sql) is str and params is not None:
+            sql = self._sql_maker(sql).format(params)
+        else:
+            sql = sql.format(params)
+
+        try:
+            result = await self._connection.fetch(sql, timeout=timeout)
+        except Exception as e:
+            raise QueryException(sql, str(e))
+
+        if result:
+            if len(result[0]) > 1:
+                for i in range(len(result)):
+                    # noinspection PyTypeChecker
+                    result[i] = tuple(result[i].values())
+            else:
+                for i in range(len(result)):
+                    # noinspection PyTypeChecker
+                    result[i] = next(result[i].values())
+
         return result
 
     async def query_first(self,

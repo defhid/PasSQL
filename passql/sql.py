@@ -22,6 +22,7 @@ class Sql:
         self._strings = []
         self._params = []
 
+        string = string.strip()
         last = 0
         for m in re.finditer(Sql.__PRM_PATTERN, string):
             start = m.start(0)
