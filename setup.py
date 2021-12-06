@@ -5,9 +5,10 @@ def setup():
         long_description = fh.read()
 
     setup(name='passql',
-          version='0.2',
+          version='0.2.1',
           description='Super light ORM',
           long_description=long_description,
+          long_description_content_type='text/markdown',
           packages=['passql'],
           author='Vlad Mironov',
           author_email='hidden120@mail.ru',
