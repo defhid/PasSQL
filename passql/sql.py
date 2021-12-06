@@ -75,13 +75,13 @@ class Sql:
                 result.append(self._strings[i])
                 if i < prm_length:
                     value = obj[self._params[i]]
-                    result.append(self._converter(value))
+                    result.append(value.format(obj) if type(value) is Sql else self._converter(value))
         else:
             for i in range(len(self._strings)):
                 result.append(self._strings[i])
                 if i < prm_length:
                     value = getattr(obj, self._params[i])
-                    result.append(self._converter(value))
+                    result.append(value.format(obj) if type(value) is Sql else self._converter(value))
 
         return ''.join(result)
 

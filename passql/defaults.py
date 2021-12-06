@@ -1,4 +1,4 @@
-from passql.sql import Sql, SqlConverter
+from passql.sql import SqlConverter
 import datetime
 
 __all__ = (
@@ -8,7 +8,6 @@ __all__ = (
 
 class SqlDefaultConverters:
     COMMON = SqlConverter({
-        Sql: lambda val, _: str(val),
         int: lambda val, _: str(val),
         float: lambda val, _: str(val),
         bool: lambda val, _: "TRUE" if val else "FALSE",
