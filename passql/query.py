@@ -2,14 +2,15 @@ from passql.exceptions import QueryException
 from passql.interfaces import *
 from passql.models import DbEntity
 from passql.sql import Sql, SqlMaker
-from typing import Union, Any, List, Type, TypeVar, Optional, Coroutine
+from typing import Union, Any, List, Type, TypeVar, Optional, Coroutine, Tuple, Set, Dict
 
 __all__ = (
     'DbConnection',
 )
 
 TEntity = TypeVar('TEntity', bound=DbEntity)
-T = TypeVar('T')
+TScalar = TypeVar('TScalar')
+TVal = TypeVar('TVal', bound=Union[Any, Tuple])
 
 
 class DbConnection:
@@ -50,10 +51,10 @@ class DbConnection:
             raise QueryException(sql, str(e))
 
     async def query_scalar(self,
-                           t: Type[T],
+                           t: Type[TScalar],
                            sql: Union[Sql, str],
                            params: Any = None,
-                           timeout: int = None) -> Optional[T]:
+                           timeout: int = None) -> Optional[TScalar]:
         """ Query single value.
 
         :param t: Return scalar type, only for generic.
@@ -104,13 +105,13 @@ class DbConnection:
         return result
 
     async def query_values_list(self,
-                                t: Type[T],
+                                t: Type[TVal],
                                 sql: Union[Sql, str],
                                 params: Any = None,
-                                timeout: int = None) -> List[T]:
+                                timeout: int = None) -> List[TVal]:
         """ Query list of entities.
 
-        :param t: Return record/scalar type, only for generic.
+        :param t: Return tuple/scalar type of values, only for generic.
         :param sql: Query string or prepared Sql object.
         :param params: Parameters to parse to sql.
         :param timeout: Time limit for the operation.
@@ -138,6 +139,80 @@ class DbConnection:
                     result[i] = next(result[i].values())
 
         return result
+
+    async def query_values_set(self,
+                               t: Type[TVal],
+                               sql: Union[Sql, str],
+                               params: Any = None,
+                               timeout: int = None) -> Set[TVal]:
+        """ Query set of entities.
+
+        :param t: Return tuple/scalar type of values, only for generic.
+        :param sql: Query string or prepared Sql object.
+        :param params: Parameters to parse to sql.
+        :param timeout: Time limit for the operation.
+        :return: Set of objects.
+        """
+
+        if type(sql) is str and params is not None:
+            sql = self._sql_maker(sql).format(params)
+        else:
+            sql = sql.format(params)
+
+        try:
+            result = await self._connection.fetch(sql, timeout=timeout)
+        except Exception as e:
+            raise QueryException(sql, str(e))
+
+        result_set = set()
+        if result:
+            if len(result[0]) > 1:
+                for i in range(len(result)):
+                    result_set.add(tuple(result[i].values()))
+            else:
+                for i in range(len(result)):
+                    result_set.add(next(result[i].values()))
+
+        return result_set
+
+    async def query_values_dict(self,
+                                key: str,
+                                t_key: Type[TScalar],
+                                t_value: Type[TVal],
+                                sql: Union[Sql, str],
+                                params: Any = None,
+                                timeout: int = None) -> Dict[TScalar, TVal]:
+        """ Query dictionary of entities.
+
+        :param key: Name of returning column that will be the key of result dictionary.
+        :param t_key: Return scalar type of key column, only for generic.
+        :param t_value: Return tuple/scalar type of values, only for generic.
+        :param sql: Query string or prepared Sql object.
+        :param params: Parameters to parse to sql.
+        :param timeout: Time limit for the operation.
+        :return: Dictionary of objects by their keys.
+        """
+
+        if type(sql) is str and params is not None:
+            sql = self._sql_maker(sql).format(params)
+        else:
+            sql = sql.format(params)
+
+        try:
+            result = await self._connection.fetch(sql, timeout=timeout)
+        except Exception as e:
+            raise QueryException(sql, str(e))
+
+        result_dict = dict()
+        if result:
+            if len(result[0]) > 1:
+                for i in range(len(result)):
+                    result_dict[result[i][key]] = tuple(result[i].values())
+            else:
+                for i in range(len(result)):
+                    result_dict[result[i][key]] = next(result[i].values())
+
+        return result_dict
 
     async def query_first(self,
                           t: Type[TEntity],

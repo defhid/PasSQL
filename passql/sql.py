@@ -43,8 +43,11 @@ class Sql:
             self._params.append(string[start + 1:last])
 
         s = string[last:]
-        if s:
+        if s or not self._strings:
             self._strings.append(s)
+
+        if not self._params:
+            self._params = None
 
     def __repr__(self):
         if self._strings:
@@ -56,10 +59,10 @@ class Sql:
         return f"<Sql: {short_preview}{params}>"
 
     def __str__(self):
-        if self._params:
+        if self._params is not None:
             raise SqlException(f"Cannot convert {self.__class__.__name__} to string, parameters required!")
 
-        return ''.join(self._strings)
+        return self._strings[0]
 
     def format(self, obj: Optional) -> str:
         """
@@ -67,6 +70,9 @@ class Sql:
 
         :param obj: Any object or dictionary with required fields/keys.
         """
+        if self._params is None:
+            return self._strings[0]
+
         result = []
         prm_length = len(self._params)
 
@@ -89,21 +95,25 @@ class Sql:
 class SqlMaker:
     __slots__ = ('_converter', )
 
+    # noinspection PyTypeChecker
+    __EMPTY = Sql(None, "")
+
     def __init__(self, converter: 'SqlConverter'):
         self._converter = converter
 
     def __call__(self, string: str) -> Sql:
         return Sql(self._converter, string)
 
+    @classmethod
+    def empty(cls) -> 'Sql':
+        return cls.__EMPTY
+
 
 class SqlConverter:
     __slots__ = ('_type_to_converter', )
 
     def __init__(self, type_to_converter_map: Dict[Type, ValueToSqlConverter]):
-        self._type_to_converter = {
-            Sql: lambda val, _: str(val),
-        }
-
+        self._type_to_converter = {}
         for t in type_to_converter_map:
             self._type_to_converter[t] = type_to_converter_map[t]
 

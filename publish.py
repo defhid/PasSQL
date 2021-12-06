@@ -1,3 +1,9 @@
+""" PyPI publishing:
+python setup.py sdist
+python publish.py
+
+"""
+
 from twine.commands import upload
 from shutil import rmtree
 from os import path
