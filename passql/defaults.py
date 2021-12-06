@@ -16,7 +16,7 @@ class SqlDefaultConverters:
     })
 
     POSTGRES = COMMON + SqlConverter({
-        str: lambda val, converter: "'" + val.replace("'", "") + "'",
+        str: lambda val, converter: "'" + val.replace("'", "") + "'::text",
         tuple: lambda val, converter: ','.join(converter(v) for v in val),
         range: lambda val, converter: ','.join(converter(v) for v in val),
         list: lambda val, converter: "'{" + ','.join(converter(v) for v in val) + "}'",
