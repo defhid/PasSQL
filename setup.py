@@ -1,34 +1,43 @@
-def setup():
-    from setuptools import setup
+""" python setup.py sdist """
 
-    with open("README.md", "r") as fh:
-        long_description = fh.read()
+from setuptools import setup
+from twine.commands import upload
+from shutil import rmtree
 
-    setup(name='passql',
-          version='0.2.1',
-          description='Super light ORM',
-          long_description=long_description,
-          long_description_content_type='text/markdown',
-          packages=['passql'],
-          author='Vlad Mironov',
-          author_email='hidden120@mail.ru',
-          python_requires='>=3.6',
-          zip_safe=False,
-          classifiers=[
-                "Programming Language :: Python :: 3.8",
-                "License :: OSI Approved :: MIT License",
-                "Operating System :: OS Independent",
-          ])
+print("## CREATING DIST FILES...")
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
-def publish():
-    from twine.commands import upload
+setup(
+    name='passql',
+    version='0.2.1',
 
-    upload.main(['dist\*'])
+    description='Super light ORM',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
 
+    author='Vladislav Mironov',
+    author_email='hidden120@mail.ru',
 
-if __name__ == '__main__':
-    # python setup.py sdist
-    publish()
-else:
-    setup()
+    packages=['passql'],
+    zip_safe=False,
+
+    python_requires='>=3.6',
+    classifiers=[
+        "Programming Language :: Python :: 3.9",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ]
+)
+
+print("## PUBLISHING...")
+
+upload.main(['dist\*'])
+
+print("## REMOVING DIST FILES...")
+
+rmtree('dist')
+rmtree('passql.egg-info')
+
+print("## SUCCESS")

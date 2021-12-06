@@ -1,4 +1,4 @@
-# PasSQL ORM — *really simple mapping for PYTHON*
+# PasSQL ORM - *really simple mapping for PYTHON*
 #### © 2021 Vladislav Mironov
 
 ### Description
