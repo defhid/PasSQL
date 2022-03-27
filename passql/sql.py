@@ -15,7 +15,7 @@ ValueToSqlConverter: TypeAlias = Callable[[Any, 'SqlConverter'], str]
 class Sql:
     __slots__ = ('_converter', '_strings', '_params')
 
-    __PRM_PATTERN: re.Pattern[str] = re.compile(r"@[\w]+")
+    __PRM_PATTERN = re.compile(r"@[\w]+")
 
     def __init__(self, converter: 'SqlConverter', string: str):
         self._converter = converter

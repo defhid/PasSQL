@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='passql',
-      version='0.2.6',
+      version='0.2.7',
 
       description='Super light ORM',
       long_description=long_description,
