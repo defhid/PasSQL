@@ -20,8 +20,14 @@ class SqlDefaultConverters:
         tuple: lambda val, converter: ','.join(converter(v) for v in val),
         range: lambda val, converter: ','.join(converter(v) for v in val),
         GeneratorType: lambda val, converter: ','.join(converter(v) for v in val),
-        list: lambda val, converter: "'{" + ','.join(converter(v) for v in val) + "}'",
-        set: lambda val, converter: "'{" + ','.join(converter(v) for v in val) + "}'",
+        list: lambda val, converter: "'{" + ','.join(converter(v)
+                                                     if type(v) is not str
+                                                     else ("\"" + v.replace("\"", "") + "\"")
+                                                     for v in val) + "}'",
+        set: lambda val, converter: "'{" + ','.join(converter(v)
+                                                    if type(v) is not str
+                                                    else ("\"" + v.replace("\"", "") + "\"")
+                                                    for v in val) + "}'",
         datetime.datetime: lambda val, converter: f"'{val}'::timestamp",
         datetime.date: lambda val, converter: f"'{val}'::date",
     })
