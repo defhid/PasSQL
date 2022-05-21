@@ -1,10 +1,10 @@
 from setuptools import setup
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 setup(name='passql',
-      version='0.2.7',
+      version='0.2.8',
 
       description='Super light ORM',
       long_description=long_description,

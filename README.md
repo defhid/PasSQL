@@ -1,5 +1,5 @@
 # PasSQL ORM - *really simple mapping for PYTHON*
-#### © 2021 Vladislav Mironov
+#### © 2022 Vladislav Mironov
 
 ### Description
 
