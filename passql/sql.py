@@ -1,6 +1,6 @@
 from passql.exceptions import SqlException
 from typing_extensions import TypeAlias
-from typing import Dict, Type, Any, Callable, Optional
+from typing import Dict, Type, Any, Callable, Optional, List
 import re
 
 __all__ = (
@@ -13,39 +13,11 @@ ValueToSqlConverter: TypeAlias = Callable[[Any, 'SqlConverter'], str]
 
 
 class Sql:
-    __slots__ = ('_converter', '_strings', '_params')
+    __slots__ = ('_formatter', '_strings', '_params')
 
-    __PRM_PATTERN = re.compile(r"@[\w]+")
-
-    def __init__(self, converter: 'SqlConverter', string: str):
-        self._converter = converter
-        self._strings = []
-        self._params = []
-
-        string = string.strip()
-        last = 0
-        for m in re.finditer(Sql.__PRM_PATTERN, string):
-            start = m.start(0)
-
-            if start - 2 > 0:
-                if string[start - 1] == '\\':
-                    if string[start - 2] != '\\':
-                        continue
-            elif start - 1 > 0:
-                if string[start - 1] == '\\':
-                    continue
-
-            s = string[last:start]
-            if s:
-                self._strings.append(s)
-
-            last = m.end(0)
-            self._params.append(string[start + 1:last])
-
-        s = string[last:]
-        if s or not self._strings:
-            self._strings.append(s)
-
+    def __init__(self, formatter: 'SqlFormatter', string: str):
+        self._formatter = formatter
+        self._strings, self._params = formatter.split(string.strip())
         if not self._params:
             self._params = None
 
@@ -81,32 +53,59 @@ class Sql:
                 result.append(self._strings[i])
                 if i < prm_length:
                     value = obj[self._params[i]]
-                    result.append(value.format(obj) if type(value) is Sql else self._converter(value))
+                    result.append(value.format(obj) if type(value) is Sql else self._formatter.value(value))
         else:
             for i in range(len(self._strings)):
                 result.append(self._strings[i])
                 if i < prm_length:
                     value = getattr(obj, self._params[i])
-                    result.append(value.format(obj) if type(value) is Sql else self._converter(value))
+                    result.append(value.format(obj) if type(value) is Sql else self._formatter.value(value))
 
         return ''.join(result)
 
 
-class SqlMaker:
-    __slots__ = ('_converter', )
+class SqlFormatter:
+    __slots__ = ('_prm_pattern', '_escape_char', '_converter')
 
-    # noinspection PyTypeChecker
-    __EMPTY = Sql(None, "")
-
-    def __init__(self, converter: 'SqlConverter'):
+    def __init__(self, prm_pattern: 're.Pattern', escape_char: str, converter: 'SqlConverter'):
+        self._prm_pattern = prm_pattern
+        self._escape_char = escape_char
         self._converter = converter
 
-    def __call__(self, string: str) -> Sql:
-        return Sql(self._converter, string)
+    def split(self, string: str) -> (List[str], List[str]):
+        fragments = []
+        params = []
 
-    @classmethod
-    def empty(cls) -> 'Sql':
-        return cls.__EMPTY
+        if string:
+            last = 0
+            for m in re.finditer(self._prm_pattern, string):
+                start = m.start(0)
+
+                if start - 2 > 0:
+                    if string[start - 1] == self._escape_char:
+                        if string[start - 2] != self._escape_char:
+                            continue
+                elif start - 1 > 0:
+                    if string[start - 1] == self._escape_char:
+                        continue
+
+                s = string[last:start]
+                if s:
+                    fragments.append(s)
+
+                last = m.end(0)
+                params.append(string[start + 1:last])
+
+            s = string[last:]
+            if s or not fragments:
+                fragments.append(s)
+        else:
+            fragments.append(string)
+
+        return fragments, params
+
+    def value(self, value: Any) -> str:
+        return self._converter(value)
 
 
 class SqlConverter:
@@ -133,3 +132,27 @@ class SqlConverter:
             type_to_converters[t] = converter
 
         return SqlConverter(type_to_converters)
+
+
+# noinspection PyTypeChecker
+NoneSqlFormatter = SqlFormatter(None, None, None)
+EmptySql = Sql(NoneSqlFormatter, "")
+
+
+class SqlMaker:
+    __slots__ = ('_formatter', )
+
+    def __init__(self, prm_pattern: 're.Pattern', converter: 'SqlConverter', escape_char: str = '\\'):
+        """
+        :param prm_pattern: regex pattern to detect parameters.
+        :param converter: parameter values converter.
+        :param escape_char: char to escape prm_pattern.
+        """
+        self._formatter = SqlFormatter(prm_pattern, escape_char, converter)
+
+    def __call__(self, string: str) -> Sql:
+        return Sql(self._formatter, string)
+
+    @staticmethod
+    def empty() -> 'Sql':
+        return EmptySql

@@ -1,9 +1,11 @@
 from passql.sql import SqlConverter
 from types import GeneratorType
 import datetime
+import re
 
 __all__ = (
     'SqlDefaultConverters',
+    'SqlDefaultPrmPatterns',
 )
 
 
@@ -31,3 +33,10 @@ class SqlDefaultConverters:
         datetime.datetime: lambda val, converter: f"'{val}'::timestamp",
         datetime.date: lambda val, converter: f"'{val}'::date",
     })
+
+
+class SqlDefaultPrmPatterns:
+    AT = re.compile(r"@\w+")
+    COLON = re.compile(r":\w+")
+    DOLLAR = re.compile(r"\$\w+")
+    OCTOTHORPE = re.compile(r"#\w+")

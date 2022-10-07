@@ -1,6 +1,5 @@
 from passql.interfaces import *
 from typing import Set, Optional
-from asyncpg import Record
 import inspect
 
 __all__ = (
@@ -10,7 +9,7 @@ __all__ = (
 
 
 class DbEntity:
-    __rec: Optional[Record]
+    __rec: Optional[IDbRecord]
     __fields: Set[str]
 
     def __init__(self):
